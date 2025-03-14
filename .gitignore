@@ -1,18 +1,77 @@
 # Python
 __pycache__/
 *.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+venv/
+env/
+.env/
+.venv/
+ENV/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
 
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
 
 # Neo4j
 neo4j/data/
 neo4j/logs/
 neo4j/plugins/
 
-# Data
-data/raw/useeio/
+# Data files - exclude large data files
+data/raw/**/*.csv
+data/raw/**/*.json
+data/raw/**/*.xlsx
+data/raw/**/*.xls
+data/raw/**/*.parquet
+
+# Allow these specific data files if needed
+# !data/raw/important_small_file.csv
+
+# Interim data
+data/interim/**/*.csv
+data/interim/**/*.json
+
+# Processed data
+data/processed/**/*.csv
+data/processed/**/*.json
+
+# Logs
+data/logs/
+logs/
+*.log
 
 # IDE
 .vscode/
 .idea/
+*.sublime-workspace
+*.sublime-project
+
+# Model artifacts
+*.h5
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.bin
+*.onnx
+
+# Keep these markdown files
+!*.md

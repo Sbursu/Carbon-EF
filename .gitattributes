@@ -1,15 +1,39 @@
-# Auto detect text files and perform LF normalization
+# Set default behavior to automatically normalize line endings
 * text=auto
 
-# Python files
-*.py text diff=python
+# Explicitly declare text files
+*.py text
+*.md text
+*.txt text
+*.yml text
+*.yaml text
+*.json text
+*.html text
+*.css text
+*.js text
 
-# Jupyter notebooks
-*.ipynb text
+# Declare files that will always have CRLF line endings on checkout
+*.bat text eol=crlf
 
-# CSV files
-*.csv text
+# Declare files that will always have LF line endings on checkout
+*.sh text eol=lf
 
-# Binary files
-*.jar binary
+# Denote all files that are truly binary and should not be modified
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
 *.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.7z binary
+
+# Uncomment these lines to use Git LFS for large data files
+# *.csv filter=lfs diff=lfs merge=lfs -text
+# *.xlsx filter=lfs diff=lfs merge=lfs -text
+# *.xls filter=lfs diff=lfs merge=lfs -text
+# *.parquet filter=lfs diff=lfs merge=lfs -text
+# *.h5 filter=lfs diff=lfs merge=lfs -text
+# *.pkl filter=lfs diff=lfs merge=lfs -text
