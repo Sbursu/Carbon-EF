@@ -17,6 +17,56 @@ from datasets import Dataset, DatasetDict
 logger = logging.getLogger(__name__)
 
 
+# Configure logging in a way that works in any environment
+def setup_logging(log_level=logging.INFO):
+    """Set up logging with handlers that work in any environment"""
+    # Create a basic console handler that always works
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
+
+    # Try to create a file handler, but don't fail if directory doesn't exist
+    file_handler = None
+    try:
+        # Get the absolute path based on the current file location
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(os.path.dirname(current_dir))  # Go up two levels
+        log_dir = os.path.join(base_dir, "training", "logs")
+
+        # Create the directory if it doesn't exist
+        os.makedirs(log_dir, exist_ok=True)
+
+        log_file = os.path.join(log_dir, "data_preparation.log")
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
+    except Exception as e:
+        print(f"Warning: Could not set up file logging: {e}")
+
+    # Configure the root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+
+    # Remove any existing handlers to avoid duplicates
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+
+    # Add the console handler
+    root_logger.addHandler(console_handler)
+
+    # Add the file handler if available
+    if file_handler:
+        root_logger.addHandler(file_handler)
+
+    return root_logger
+
+
+# Run setup_logging at module import to ensure it's configured
+setup_logging()
+
+
 def load_and_prepare_data(
     train_path: str = "training/data/instructions_train.json",
     val_path: str = "training/data/instructions_val.json",
@@ -204,20 +254,7 @@ def format_instruction(example: Dict[str, Any]) -> Dict[str, str]:
 
 if __name__ == "__main__":
     # Set up logging
-    # Create logs directory if it doesn't exist
-    log_dir = "training/logs"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir, exist_ok=True)
-        print(f"Created log directory: {log_dir}")
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler(os.path.join(log_dir, "data_preparation.log")),
-            logging.StreamHandler(),
-        ],
-    )
+    setup_logging()
 
     # Test data loading and preparation
     train_dataset, val_dataset = load_and_prepare_data()
