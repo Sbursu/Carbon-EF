@@ -204,11 +204,17 @@ def format_instruction(example: Dict[str, Any]) -> Dict[str, str]:
 
 if __name__ == "__main__":
     # Set up logging
+    # Create logs directory if it doesn't exist
+    log_dir = "training/logs"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+        print(f"Created log directory: {log_dir}")
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
-            logging.FileHandler("training/logs/data_preparation.log"),
+            logging.FileHandler(os.path.join(log_dir, "data_preparation.log")),
             logging.StreamHandler(),
         ],
     )
