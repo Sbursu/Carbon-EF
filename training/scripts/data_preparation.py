@@ -114,7 +114,15 @@ def _load_data_from_neo4j(
         Tuple of (train_data, val_data)
     """
     try:
-        from neo4j import GraphDatabase
+        # Import Neo4j only when needed
+        try:
+            from neo4j import GraphDatabase
+        except ImportError:
+            logger.error(
+                "Neo4j module not installed. Please install it using 'pip install neo4j'"
+            )
+            logger.info("Returning empty datasets as fallback")
+            return [], []
 
         uri = credentials.get("uri", "bolt://localhost:7687")
         username = credentials.get("username", "neo4j")
