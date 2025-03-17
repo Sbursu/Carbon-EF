@@ -1,0 +1,106 @@
+2025-03-14 00:37:09.209+0000 INFO  The license agreement was accepted with environment variable NEO4J_ACCEPT_LICENSE_AGREEMENT=yes when the Software was started.
+
+
+2025-03-14 00:37:09.237+0000 WARN  Use of deprecated setting 'dbms.directories.import'. It is replaced by 'server.directories.import'.
+2025-03-14 00:37:09.237+0000 WARN  Use of deprecated setting 'dbms.memory.pagecache.size'. It is replaced by 'server.memory.pagecache.size'.
+2025-03-14 00:37:09.237+0000 WARN  Use of deprecated setting 'dbms.memory.heap.max_size'. It is replaced by 'server.memory.heap.max_size'.
+2025-03-14 00:37:09.241+0000 ERROR Invalid memory configuration - exceeds physical memory. Check the configured values for server.memory.pagecache.size and server.memory.heap.max_size
+2025-03-14 00:37:09.241+0000 INFO  Neo4j Server shutdown initiated by request
+2025-03-14 00:37:09.242+0000 INFO  Stopped.
+2025-03-14 00:37:43.219+0000 INFO  The license agreement was accepted with environment variable NEO4J_ACCEPT_LICENSE_AGREEMENT=yes when the Software was started.
+
+
+2025-03-14 00:37:43.247+0000 INFO  Starting...
+2025-03-14 00:37:44.149+0000 INFO  ======== Neo4j 5.11.0 ========
+2025-03-14 00:37:44.164+0000 INFO  This instance is ServerId{1af103b5} (1af103b5-bd77-4463-9d66-a600160daa69)
+2025-03-14 00:37:44.178+0000 ERROR Failed to start Neo4j on 0.0.0.0:7474.
+java.lang.RuntimeException: Error starting Neo4j database server at /var/lib/neo4j/data/databases
+	at org.neo4j.graphdb.facade.DatabaseManagementServiceFactory.startDatabaseServer(DatabaseManagementServiceFactory.java:272) ~[neo4j-5.11.0.jar:5.11.0]
+	at org.neo4j.graphdb.facade.DatabaseManagementServiceFactory.build(DatabaseManagementServiceFactory.java:208) ~[neo4j-5.11.0.jar:5.11.0]
+	at com.neo4j.server.enterprise.EnterpriseDBMSProvider.createManagementService(EnterpriseDBMSProvider.java:39) ~[neo4j-enterprise-5.11.0.jar:5.11.0]
+	at com.neo4j.server.enterprise.EnterpriseDBMSProvider.<init>(EnterpriseDBMSProvider.java:29) ~[neo4j-enterprise-5.11.0.jar:5.11.0]
+	at com.neo4j.server.enterprise.EnterpriseDBMSFactory.createManagementService(EnterpriseDBMSFactory.java:19) ~[neo4j-enterprise-5.11.0.jar:5.11.0]
+	at com.neo4j.server.enterprise.EnterpriseBootstrapper.createNeo(EnterpriseBootstrapper.java:25) ~[neo4j-enterprise-5.11.0.jar:5.11.0]
+	at org.neo4j.server.NeoBootstrapper.start(NeoBootstrapper.java:187) [neo4j-5.11.0.jar:5.11.0]
+	at org.neo4j.server.NeoBootstrapper.start(NeoBootstrapper.java:99) [neo4j-5.11.0.jar:5.11.0]
+	at com.neo4j.server.enterprise.EnterpriseEntryPoint.main(EnterpriseEntryPoint.java:19) [neo4j-enterprise-5.11.0.jar:5.11.0]
+Caused by: org.neo4j.kernel.lifecycle.LifecycleException: Component 'org.neo4j.kernel.extension.GlobalExtensions@59496961' failed to initialize. Please see the attached cause exception "Exception java.lang.ExceptionInInitializerError [in thread "main"]".
+	at org.neo4j.kernel.lifecycle.LifeSupport$LifecycleInstance.init(LifeSupport.java:335) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.lifecycle.LifeSupport.init(LifeSupport.java:57) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.lifecycle.LifeSupport.start(LifeSupport.java:86) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.graphdb.facade.DatabaseManagementServiceFactory.startDatabaseServer(DatabaseManagementServiceFactory.java:263) ~[neo4j-5.11.0.jar:5.11.0]
+	... 8 more
+Caused by: org.neo4j.kernel.extension.FailedToBuildExtensionException: Failed to build kernel extension Extension:GraphStoreCatalogProcedureFacadeExtension[gds.procedure_facade] because it is compiled with a reference to a class, method, or field, that is not in the class path: 'Could not initialize class org.neo4j.gds.compat.ProxyUtil'. The most common cause of this problem, is that Neo4j has been upgraded without also upgrading all installed extensions, such as APOC. Make sure that all of your extensions are build against your specific version of Neo4j.
+	at org.neo4j.kernel.extension.ExtensionFailureStrategies.wrap(ExtensionFailureStrategies.java:56) ~[neo4j-kernel-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.extension.ExtensionFailureStrategies$1.handle(ExtensionFailureStrategies.java:68) ~[neo4j-kernel-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.extension.AbstractExtensions.init(AbstractExtensions.java:69) ~[neo4j-kernel-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.lifecycle.LifeSupport$LifecycleInstance.init(LifeSupport.java:318) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.lifecycle.LifeSupport.init(LifeSupport.java:57) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.lifecycle.LifeSupport.start(LifeSupport.java:86) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.graphdb.facade.DatabaseManagementServiceFactory.startDatabaseServer(DatabaseManagementServiceFactory.java:263) ~[neo4j-5.11.0.jar:5.11.0]
+	... 8 more
+Caused by: java.lang.NoClassDefFoundError: Could not initialize class org.neo4j.gds.compat.ProxyUtil
+	at org.neo4j.gds.compat.Neo4jProxy.<clinit>(Neo4jProxy.java:96) ~[neo4j-graph-data-science-2.4.0.jar:?]
+	at org.neo4j.gds.procedure.facade.GraphStoreCatalogProcedureFacadeExtension.newInstance(GraphStoreCatalogProcedureFacadeExtension.java:54) ~[neo4j-graph-data-science-2.4.0.jar:?]
+	at org.neo4j.gds.procedure.facade.GraphStoreCatalogProcedureFacadeExtension.newInstance(GraphStoreCatalogProcedureFacadeExtension.java:40) ~[neo4j-graph-data-science-2.4.0.jar:?]
+	at org.neo4j.kernel.extension.AbstractExtensions.newInstance(AbstractExtensions.java:125) ~[neo4j-kernel-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.extension.AbstractExtensions.init(AbstractExtensions.java:63) ~[neo4j-kernel-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.lifecycle.LifeSupport$LifecycleInstance.init(LifeSupport.java:318) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.lifecycle.LifeSupport.init(LifeSupport.java:57) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.kernel.lifecycle.LifeSupport.start(LifeSupport.java:86) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.graphdb.facade.DatabaseManagementServiceFactory.startDatabaseServer(DatabaseManagementServiceFactory.java:263) ~[neo4j-5.11.0.jar:5.11.0]
+	... 8 more
+Caused by: java.lang.ExceptionInInitializerError: Exception java.lang.ExceptionInInitializerError [in thread "main"]
+	at org.neo4j.gds.compat.Neo4jVersion.findNeo4jVersion(Neo4jVersion.java:88) ~[neo4j-graph-data-science-2.4.0.jar:?]
+	at org.neo4j.gds.compat.GraphDatabaseApiProxy.neo4jVersion(GraphDatabaseApiProxy.java:50) ~[neo4j-graph-data-science-2.4.0.jar:?]
+	at org.neo4j.gds.compat.ProxyUtil.loadNeo4jVersion(ProxyUtil.java:183) ~[neo4j-graph-data-science-2.4.0.jar:?]
+	at org.neo4j.gds.compat.ProxyUtil.<clinit>(ProxyUtil.java:179) ~[neo4j-graph-data-science-2.4.0.jar:?]
+	at org.neo4j.gds.compat.SettingProxy.<clinit>(SettingProxy.java:30) ~[neo4j-graph-data-science-2.4.0.jar:?]
+	at com.neo4j.gds.arrow.server.GdsFlightServerSettings.<clinit>(GdsFlightServerSettings.java:23) ~[neo4j-graph-data-science-2.4.0.jar:?]
+	at jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[?:?]
+	at jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77) ~[?:?]
+	at jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[?:?]
+	at java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499) ~[?:?]
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:480) ~[?:?]
+	at java.util.ServiceLoader$ProviderImpl.newInstance(ServiceLoader.java:789) ~[?:?]
+	at java.util.ServiceLoader$ProviderImpl.get(ServiceLoader.java:729) ~[?:?]
+	at java.util.ServiceLoader$3.next(ServiceLoader.java:1403) ~[?:?]
+	at org.neo4j.service.Services.loadAllSafely(Services.java:152) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.service.Services.loadAll(Services.java:73) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.service.Services.loadAll(Services.java:59) ~[neo4j-common-5.11.0.jar:5.11.0]
+	at org.neo4j.configuration.Config.<clinit>(Config.java:98) ~[neo4j-configuration-5.11.0.jar:5.11.0]
+	at org.neo4j.server.NeoBootstrapper.start(NeoBootstrapper.java:127) ~[neo4j-5.11.0.jar:5.11.0]
+	... 2 more
+2025-03-14 00:37:44.180+0000 INFO  Neo4j Server shutdown initiated by request
+2025-03-14 00:37:44.181+0000 INFO  Stopped.
+2025-03-14 00:38:16.541+0000 INFO  The license agreement was accepted with environment variable NEO4J_ACCEPT_LICENSE_AGREEMENT=yes when the Software was started.
+
+
+2025-03-14 00:38:16.558+0000 INFO  Starting...
+2025-03-14 00:38:17.465+0000 INFO  ======== Neo4j 5.11.0 ========
+2025-03-14 00:38:17.475+0000 INFO  This instance is ServerId{1af103b5} (1af103b5-bd77-4463-9d66-a600160daa69)
+2025-03-14 00:38:18.991+0000 INFO  Default database 'neo4j' is created
+2025-03-14 00:38:20.331+0000 INFO  Sending metrics to CSV file at /var/lib/neo4j/metrics
+2025-03-14 00:38:20.383+0000 INFO  Bolt enabled on 0.0.0.0:7687.
+2025-03-14 00:38:20.386+0000 INFO  Bolt (Routing) enabled on 0.0.0.0:7688.
+2025-03-14 00:38:20.766+0000 INFO  Remote interface available at http://localhost:7474/
+2025-03-14 00:38:20.768+0000 INFO  id: 6E3E589472F75EAF19506F4EAE372D7BB5E2AA90CD43FEB10C54FD6716F01E79
+2025-03-14 00:38:20.768+0000 INFO  name: system
+2025-03-14 00:38:20.768+0000 INFO  creationDate: 2025-03-14T00:38:18.287Z
+2025-03-14 00:38:20.768+0000 INFO  Started.
+2025-03-14 00:42:18.256+0000 WARN  [bolt-71] The client is unauthorized due to authentication failure.
+2025-03-14 00:42:18.267+0000 WARN  [bolt-72] The client is unauthorized due to authentication failure.
+2025-03-14 00:42:18.280+0000 WARN  [bolt-73] The client is unauthorized due to authentication failure.
+2025-03-14 00:44:44.849+0000 INFO  Neo4j Server shutdown initiated by request
+2025-03-14 00:44:44.850+0000 INFO  Stopping...
+2025-03-14 00:44:49.983+0000 INFO  Stopped.
+2025-03-14 00:44:58.841+0000 INFO  Starting...
+2025-03-14 00:44:59.280+0000 INFO  This instance is ServerId{1af103b5} (1af103b5-bd77-4463-9d66-a600160daa69)
+2025-03-14 00:44:59.569+0000 INFO  ======== Neo4j 5.11.0 ========
+2025-03-14 00:45:01.449+0000 INFO  Bolt enabled on 0.0.0.0:7687.
+2025-03-14 00:45:01.810+0000 INFO  Remote interface available at http://localhost:7474/
+2025-03-14 00:45:01.812+0000 INFO  id: 6E3E589472F75EAF19506F4EAE372D7BB5E2AA90CD43FEB10C54FD6716F01E79
+2025-03-14 00:45:01.812+0000 INFO  name: system
+2025-03-14 00:45:01.812+0000 INFO  creationDate: 2025-03-14T00:38:18.287Z
+2025-03-14 00:45:01.813+0000 INFO  Started.
+2025-03-14 02:21:15.380+0000 WARN  [bolt-640] The client is unauthorized due to authentication failure.
