@@ -35,7 +35,7 @@ from google.colab import drive
 drive.mount('/content/drive')
 
 # Install required packages
-!pip install -q torch transformers peft datasets accelerate scipy wandb trl"""
+!pip install -q torch==2.1.0 transformers==4.35.0 peft==0.6.0 datasets accelerate scipy wandb trl"""
     )
 )
 
@@ -66,7 +66,7 @@ except Exception as e:
     )
 )
 
-# Model Configuration - UPDATED to use 16-bit precision
+# Model Configuration - UPDATED to use 16-bit precision and fix meta tensor error
 nb.cells.append(
     nbf.v4.new_markdown_cell(
         """## 3. Model and Tokenizer Configuration
@@ -88,18 +88,22 @@ MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.2"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
 tokenizer.pad_token = tokenizer.eos_token
 
-# Load model with 16-bit precision instead of 4-bit quantization
+# Explicitly set device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
+# Fixed model loading to avoid meta tensor error
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
     torch_dtype=torch.float16,
-    device_map="auto",
+    device_map=None,  # Don't use auto device mapping
     trust_remote_code=True,
-    low_cpu_mem_usage=True
 )
+model = model.to(device)  # Explicitly move to device
 
 # Configure LoRA
 lora_config = LoraConfig(
-    r=16,  # Reduced rank for better memory usage
+    r=8,  # Reduced rank for better memory usage
     lora_alpha=16,
     target_modules=["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     lora_dropout=0.05,
@@ -199,7 +203,7 @@ except Exception as e:
     )
 )
 
-# Training Configuration
+# Training Configuration - UPDATED to fix deprecation warnings
 nb.cells.append(
     nbf.v4.new_markdown_cell(
         """## 5. Training Configuration
@@ -216,16 +220,19 @@ nb.cells.append(
 training_args = TrainingArguments(
     output_dir="/content/drive/MyDrive/mistral-ef-checkpoints",
     num_train_epochs=3,
-    per_device_train_batch_size=2,  # Reduced batch size for better memory usage
+    per_device_train_batch_size=1,  # Reduced batch size for better memory usage
     gradient_accumulation_steps=8,  # Increased gradient accumulation steps
     learning_rate=2e-4,
     fp16=True,
     logging_steps=10,
     save_strategy="epoch",
-    evaluation_strategy="epoch",
+    eval_strategy="epoch",  # Fixed deprecated warning
     load_best_model_at_end=True,
     report_to="wandb",
-    warmup_ratio=0.1
+    warmup_ratio=0.1,
+    gradient_checkpointing=True,  # Enable gradient checkpointing to save memory
+    optim="adamw_torch",
+    max_grad_norm=0.3
 )
 
 # Data collator
@@ -234,13 +241,12 @@ data_collator = DataCollatorForLanguageModeling(
     mlm=False
 )
 
-# Initialize trainer
+# Initialize trainer with fixed parameters (avoid deprecated warning)
 trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=train_data['train'],
     eval_dataset=val_data['train'],
-    tokenizer=tokenizer,
     data_collator=data_collator
 )
 
