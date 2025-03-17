@@ -35,8 +35,12 @@ nb.cells.append(
 from google.colab import drive
 drive.mount('/content/drive')
 
-# Install required packages
-!pip install -q torch==2.1.0 transformers==4.35.0 peft==0.6.0 datasets accelerate scipy wandb trl"""
+# Install required packages with compatible versions
+!pip install -q torch==2.1.0 
+!pip install -q transformers==4.35.0 
+!pip install -q huggingface_hub==0.16.4
+!pip install -q accelerate==0.21.0
+!pip install -q peft==0.6.0 datasets scipy wandb trl bitsandbytes==0.40.2"""
     )
 )
 
