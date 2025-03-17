@@ -15,7 +15,8 @@ This notebook implements the fine-tuning process for the Mistral-7B model to gen
 1. GPU Runtime in Google Colab
 2. Google Drive mounted for saving checkpoints
 3. Hugging Face account with access to Mistral-7B-Instruct-v0.2
-4. HF_TOKEN in Colab secrets"""
+4. HF_TOKEN in Colab secrets
+5. Weights & Biases account for experiment tracking"""
     )
 )
 
@@ -66,10 +67,50 @@ except Exception as e:
     )
 )
 
+# Add Weights & Biases setup
+nb.cells.append(
+    nbf.v4.new_markdown_cell(
+        """## 3. Weights & Biases Setup
+
+Initialize Weights & Biases for experiment tracking."""
+    )
+)
+
+nb.cells.append(
+    nbf.v4.new_code_cell(
+        """import wandb
+
+# Initialize wandb - this will open a browser tab for authentication if not already logged in
+# If you're already logged in through the browser, this will use your existing session
+wandb.login()
+
+# Define project and experiment details
+WANDB_PROJECT = "mistral-carbon-ef"
+EXPERIMENT_NAME = "mistral-7b-emission-factors"
+
+# Initialize the wandb run
+wandb.init(
+    project=WANDB_PROJECT,
+    name=EXPERIMENT_NAME,
+    config={
+        "model_name": "mistralai/Mistral-7B-Instruct-v0.2",
+        "epochs": 3,
+        "learning_rate": 2e-4,
+        "batch_size": 1,
+        "gradient_accumulation_steps": 8,
+        "lora_rank": 8,
+        "lora_alpha": 16
+    }
+)
+
+print("Weights & Biases initialized successfully!")"""
+    )
+)
+
 # Model Configuration - UPDATED to use 16-bit precision and fix meta tensor error
 nb.cells.append(
     nbf.v4.new_markdown_cell(
-        """## 3. Model and Tokenizer Configuration
+        """## 4. Model and Tokenizer Configuration
 
 Set up the Mistral-7B model with 16-bit precision and LoRA configuration."""
     )
@@ -120,7 +161,7 @@ print("Model and tokenizer configured successfully!")"""
 # Data Preparation - UPDATED to create sample data
 nb.cells.append(
     nbf.v4.new_markdown_cell(
-        """## 4. Data Preparation
+        """## 5. Data Preparation
 
 Load and prepare the training data. If the data files don't exist, create sample data for testing."""
     )
@@ -206,7 +247,7 @@ except Exception as e:
 # Training Configuration - UPDATED to fix deprecation warnings
 nb.cells.append(
     nbf.v4.new_markdown_cell(
-        """## 5. Training Configuration
+        """## 6. Training Configuration
 
 Set up training arguments and initialize the trainer."""
     )
@@ -228,7 +269,8 @@ training_args = TrainingArguments(
     save_strategy="epoch",
     eval_strategy="epoch",  # Fixed deprecated warning
     load_best_model_at_end=True,
-    report_to="wandb",
+    report_to="wandb",  # Log metrics to Weights & Biases
+    run_name=EXPERIMENT_NAME,  # Use the same experiment name for wandb
     warmup_ratio=0.1,
     gradient_checkpointing=True,  # Enable gradient checkpointing to save memory
     optim="adamw_torch",
@@ -257,7 +299,7 @@ print("Training configuration completed!")"""
 # Training Process
 nb.cells.append(
     nbf.v4.new_markdown_cell(
-        """## 6. Training Process
+        """## 7. Training Process
 
 Start the fine-tuning process."""
     )
@@ -276,7 +318,7 @@ trainer.save_model("/content/drive/MyDrive/mistral-ef-final")"""
 # Model Evaluation
 nb.cells.append(
     nbf.v4.new_markdown_cell(
-        """## 7. Model Evaluation
+        """## 8. Model Evaluation
 
 Evaluate the fine-tuned model on the test set."""
     )
@@ -286,14 +328,17 @@ nb.cells.append(
     nbf.v4.new_code_cell(
         """# Evaluate on test set
 test_results = trainer.evaluate(test_data['train'])
-print(f"Test results: {test_results}")"""
+print(f"Test results: {test_results}")
+
+# Log test results to wandb
+wandb.log({"test_loss": test_results["loss"]})"""
     )
 )
 
 # Save and Export
 nb.cells.append(
     nbf.v4.new_markdown_cell(
-        """## 8. Save and Export
+        """## 9. Save and Export
 
 Save the model and tokenizer to Google Drive."""
     )
@@ -314,6 +359,9 @@ with open("/content/drive/MyDrive/mistral-ef-final/training_config.json", "w") a
         "training_args": training_args.to_dict(),
         "test_results": test_results
     }, f, indent=2)
+
+# Finish wandb run
+wandb.finish()
 
 print("Model and configuration saved successfully!")"""
     )
