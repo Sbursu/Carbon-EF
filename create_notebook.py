@@ -1,97 +1,197 @@
 #!/usr/bin/env python3
 import json
+import os
+import shutil
 
-# Create a minimal notebook with essential cells
-notebook = {
-    "cells": [
-        {
-            "cell_type": "markdown",
-            "metadata": {},
-            "source": "# Mistral-7B Fine-Tuning\n\nThis notebook implements fine-tuning of Mistral-7B for emission factor recommendations.\n\n## Setup\n1. Select Runtime > Change runtime type and choose GPU\n2. Run cells in sequence",
-        },
-        {
-            "cell_type": "code",
-            "metadata": {},
-            "execution_count": None,
-            "source": "# Check GPU availability\n!nvidia-smi",
-        },
-        {"cell_type": "markdown", "metadata": {}, "source": "## Install Dependencies"},
-        {
-            "cell_type": "code",
-            "metadata": {},
-            "execution_count": None,
-            "source": "# Install core dependencies\n!pip install -q transformers==4.36.2 datasets==2.16.1 peft==0.7.1 accelerate==0.25.0 bitsandbytes==0.41.3 trl==0.7.11 wandb==0.16.3\n!pip install -q torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118\n\n# Install neo4j for database access (optional, used only if Neo4j data source is enabled)\n!pip install -q neo4j==5.10.0",
-        },
-        {
-            "cell_type": "markdown",
-            "metadata": {},
-            "source": "## Setup Environment",
-        },
-        {
-            "cell_type": "code",
-            "metadata": {},
-            "execution_count": None,
-            "source": '# Setup working environment for training\nimport os\nimport sys\nimport json\n\n# Get the content directory - the root of all operations\ncontent_dir = \'/content\'\nos.chdir(content_dir)\nprint(f"Starting in directory: {os.getcwd()}")\n\n# First, completely remove any existing Carbon-EF directories to prevent nesting\n!rm -rf Carbon-EF\n!find /content -name "Carbon-EF" -type d | xargs rm -rf\n\n# Clone the repository to the content directory\n!git clone https://github.com/Sbursu/Carbon-EF.git\nos.chdir(\'Carbon-EF\')\nprint(f"Now in directory: {os.getcwd()}")\n\n# Create required directories\n!mkdir -p training/logs\n!mkdir -p training/data\n\n# Create sample data files directly without using cell magic\nprint("\\nCreating sample instruction data files...")\n\n# Sample instruction data\nsample_instructions = [\n    {\n        "instruction": "What is the emission factor for cement production in USA?",\n        "input": "",\n        "output": "The emission factor for cement production in the USA is 0.92 kg CO2e/kg. This data is sourced from USEEIO_v2.1.",\n        "metadata": {\n            "regions": ["USA"],\n            "entity_types": ["product"],\n            "difficulty": "basic",\n            "sources": ["USEEIO_v2.1"]\n        }\n    },\n    {\n        "instruction": "Compare the emission factor for wheat production between France and the USA.",\n        "input": "",\n        "output": "The emission factor for wheat production in France is 0.38 kg CO2e/kg, while in the USA it is 0.41 kg CO2e/kg. The USA has a slightly higher emission factor (by 7.9%). This data is sourced from Agribalyse_3.1 for France and USEEIO_v2.1 for the USA.",\n        "metadata": {\n            "regions": ["FR", "USA"],\n            "entity_types": ["product"],\n            "difficulty": "moderate",\n            "sources": ["Agribalyse_3.1", "USEEIO_v2.1"]\n        }\n    },\n    {\n        "instruction": "What are the emission factors for the top 3 contributors to agricultural emissions in Europe?",\n        "input": "",\n        "output": "The top 3 contributors to agricultural emissions in Europe are: 1) Beef production at 22.9 kg CO2e/kg, 2) Dairy farming at 1.4 kg CO2e/kg of milk, and 3) Rice cultivation at 3.7 kg CO2e/kg. These figures are from EXIOBASE_3.8 and represent EU average values.",\n        "metadata": {\n            "regions": ["EU"],\n            "entity_types": ["product", "sector"],\n            "difficulty": "complex",\n            "sources": ["EXIOBASE_3.8"]\n        }\n    },\n    {\n        "instruction": "How should I adjust the global emission factor for rice production when using it in Thailand?",\n        "input": "",\n        "output": "The global emission factor for rice production is 2.8 kg CO2e/kg, but for Thailand, you should apply a regional multiplier of 1.32, resulting in an adjusted factor of 3.7 kg CO2e/kg. This is due to specific cultivation practices and methane emissions from flooded rice fields in the region. Source: IPCC AR6 regional multipliers.",\n        "metadata": {\n            "regions": ["GLB", "THA"],\n            "entity_types": ["product"],\n            "difficulty": "methodological",\n            "sources": ["IPCC_AR6"]\n        }\n    },\n    {\n        "instruction": "What emission factor should I use for a new plant-based leather alternative?",\n        "input": "",\n        "output": "For a new plant-based leather alternative, you can use 2.1 kg CO2e/kg as a proxy based on similar plant-based materials. This is significantly lower than animal leather (17.0 kg CO2e/kg). However, this is an estimate and should be used with a confidence factor of 0.6. Consider conducting a specific LCA study for your exact production process. Source: OpenLCA database.",\n        "metadata": {\n            "regions": ["GLB"],\n            "entity_types": ["product"],\n            "difficulty": "edge_case",\n            "sources": ["OpenLCA"]\n        }\n    }\n]\n\n# Write sample data files\ndata_files = {\n    "training/data/instructions_train.json": sample_instructions[:3],\n    "training/data/instructions_val.json": sample_instructions[3:4],\n    "training/data/instructions_test.json": sample_instructions[4:],\n}\n\nfor file_path, data in data_files.items():\n    print(f"Creating data file: {file_path}")\n    with open(file_path, "w", encoding="utf-8") as f:\n        json.dump(data, f, indent=2)\n\nprint(f"Working directory: {os.getcwd()}")\n!ls -la training/data\n\n# Add repository root to Python path\nsys.path.append(os.getcwd())\n\n# Check for any unexpected directories\n!find /content -name "Carbon-EF" -type d | sort',
-        },
-        {
-            "cell_type": "markdown",
-            "metadata": {},
-            "source": "## Import Modules",
-        },
-        {
-            "cell_type": "code",
-            "metadata": {},
-            "execution_count": None,
-            "source": '# Import necessary modules with error handling\ntry:\n    import inspect\n    \n    # First import the data preparation module\n    from training.scripts.data_preparation import load_and_prepare_data, format_instruction\n    print("Successfully imported data_preparation module")\n    \n    # Check the function signature to see if use_neo4j is supported\n    params = inspect.signature(load_and_prepare_data).parameters\n    use_neo4j_supported = \'use_neo4j\' in params\n    print(f"use_neo4j parameter supported: {use_neo4j_supported}")\n    \n    # Now import the other modules\n    from training.scripts.model_config import setup_model_and_tokenizer, get_training_config\n    from training.scripts.training import setup_trainer, evaluate_model, save_model\n    print("Successfully imported all required modules")\nexcept ImportError as e:\n    print(f"Import error: {e}")\n    print("Python path: {}".format(sys.path))\n    print("\\nContents of training/scripts:")\n    !ls -la training/scripts\n    print("\\nPlease check that all required packages and modules are installed")',
-        },
-        {"cell_type": "markdown", "metadata": {}, "source": "## Prepare Training Data"},
-        {
-            "cell_type": "code",
-            "metadata": {},
-            "execution_count": None,
-            "source": '# Check if data files exist\ndata_files = {\n    "train": "training/data/instructions_train.json",\n    "val": "training/data/instructions_val.json",\n    "test": "training/data/instructions_test.json"\n}\n\nfor split, file_path in data_files.items():\n    if os.path.exists(file_path):\n        print(f"Found {split} data: {file_path}")\n    else:\n        print(f"Warning: {file_path} not found")\n\n# Load and prepare data\ntry:\n    # Check function signature before calling to avoid parameter errors\n    import inspect\n    params = inspect.signature(load_and_prepare_data).parameters\n    use_neo4j_supported = \'use_neo4j\' in params\n    \n    # Call the function with appropriate parameters based on signature\n    if use_neo4j_supported:\n        print("Using load_and_prepare_data with use_neo4j=False")\n        train_data, val_data = load_and_prepare_data(use_neo4j=False)\n    else:\n        print("Using load_and_prepare_data without use_neo4j parameter")\n        train_data, val_data = load_and_prepare_data()\n    \n    # Format data for training\n    train_data = train_data.map(format_instruction)\n    val_data = val_data.map(format_instruction)\n    \n    # Print summary\n    print(f"Training examples: {len(train_data[\'train\'])}")\n    print(f"Validation examples: {len(val_data[\'train\'])}")\n    \n    # Show sample\n    print("\\nSample training example:")\n    print(train_data["train"][0]["text"][:300] + "...")\nexcept Exception as e:\n    print(f"Error preparing data: {e}")\n    import traceback\n    traceback.print_exc()\n    print("\\nPlease check that the data files exist and are properly formatted")',
-        },
-        {"cell_type": "markdown", "metadata": {}, "source": "## Initialize Model"},
-        {
-            "cell_type": "code",
-            "metadata": {},
-            "execution_count": None,
-            "source": '# Set up model and tokenizer\ntry:\n    model, tokenizer = setup_model_and_tokenizer()\n    print("Model and tokenizer successfully initialized")\n    \n    # Get training configuration\n    config = get_training_config()\n    print("\\nTraining configuration:")\n    for key, value in config.items():\n        print(f"  {key}: {value}")\n    \n    # Set up trainer\n    trainer = setup_trainer(model, tokenizer, train_data, val_data, config)\n    print("\\nTrainer set up successfully")\nexcept Exception as e:\n    print(f"Error setting up model: {e}")\n    print("Please check your GPU availability and memory")',
-        },
-        {"cell_type": "markdown", "metadata": {}, "source": "## Start Training"},
-        {
-            "cell_type": "code",
-            "metadata": {},
-            "execution_count": None,
-            "source": '# Start training\ntry:\n    print("Starting training...")\n    trainer.train()\n    print("Training completed successfully!")\n    \n    # Save model\n    save_model(model, tokenizer, config[\'output_dir\'])\n    print(f"Model saved to {config[\'output_dir\']}/final_model")\nexcept Exception as e:\n    print(f"Error during training: {e}")\n    print("\\nTroubleshooting tips:")\n    print("1. Check if you have enough VRAM (T4 or better GPU recommended)")\n    print("2. Try reducing batch size or gradient accumulation steps")',
-        },
-        {"cell_type": "markdown", "metadata": {}, "source": "## Evaluate Model"},
-        {
-            "cell_type": "code",
-            "metadata": {},
-            "execution_count": None,
-            "source": '# Run evaluation\ntry:\n    print("Running evaluation...")\n    results = evaluate_model(model, tokenizer)\n    \n    # Display results\n    print("\\nEvaluation results:")\n    for result in results:\n        print(f"\\nQuery: {result[\'query\']}")\n        print(f"Response: {result[\'response\']}")\n        print()\nexcept Exception as e:\n    print(f"Error during evaluation: {e}")',
-        },
-        {"cell_type": "markdown", "metadata": {}, "source": "## Test Your Own Queries"},
-        {
-            "cell_type": "code",
-            "metadata": {},
-            "execution_count": None,
-            "source": 'from training.scripts.training import generate_recommendation\n\nquery = "What is the emission factor for cement production in India?"\ntry:\n    response = generate_recommendation(model, tokenizer, query)\n    print(f"Query: {query}")\n    print(f"Response: {response}")\nexcept Exception as e:\n    print(f"Error generating recommendation: {e}")',
-        },
-    ],
-    "metadata": {
-        "accelerator": "GPU",
-        "colab": {"gpuType": "T4", "provenance": []},
-        "kernelspec": {"display_name": "Python 3", "name": "python3"},
-        "language_info": {"name": "python"},
+
+def create_notebook():
+    # Create a minimal notebook with essential cells
+    notebook = {
+        "cells": [
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": "# Mistral-7B Fine-Tuning for Emission Factor Recommendations\n\nThis notebook implements fine-tuning of the Mistral-7B language model to provide accurate, region-specific emission factor recommendations.\n\n## Setup Instructions\n1. Select Runtime > Change runtime type and choose GPU (T4 or better)\n2. Run cells in sequence",
+            },
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "source": "# Check GPU availability\n!nvidia-smi",
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": "## Install Dependencies",
+            },
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "source": "# Install core dependencies with specific versions\n!pip install -q transformers==4.36.2 datasets==2.16.1 peft==0.7.1 accelerate==0.25.0 bitsandbytes==0.41.3 trl==0.7.11 wandb==0.16.3\n!pip install -q torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118\n!pip install -q neo4j==5.10.0",
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": "## Setup Clean Environment",
+            },
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "source": """# Aggressively remove any existing Carbon-EF directories
+import os
+import shutil
+import glob
+
+# Clean up any nested Carbon-EF directories
+for path in glob.glob('/content/Carbon-EF*/**/', recursive=True):
+    print(f"Removing directory: {path}")
+    shutil.rmtree(path, ignore_errors=True)
+
+# Clone fresh copy of repository
+!git clone https://github.com/Sbursu/Carbon-EF.git /content/fresh-carbon-ef
+os.chdir('/content/fresh-carbon-ef')
+
+# Create required directories
+os.makedirs('training/data', exist_ok=True)
+os.makedirs('training/scripts', exist_ok=True)
+os.makedirs('training/models', exist_ok=True)
+os.makedirs('training/logs', exist_ok=True)
+
+print(f"Working directory: {os.getcwd()}")
+print("\\nDirectory structure:")
+!ls -R training/""",
+            },
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": "## Create Sample Data",
+            },
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "source": """# Create sample instruction data directly
+import json
+
+sample_instructions = [
+    {
+        "instruction": "What is the emission factor for cement production in USA?",
+        "input": "",
+        "output": "The emission factor for cement production in the USA is 0.92 kg CO2e/kg. This data is sourced from USEEIO_v2.1.",
+        "metadata": {
+            "regions": ["USA"],
+            "entity_types": ["product"],
+            "difficulty": "basic",
+            "sources": ["USEEIO_v2.1"]
+        }
     },
-    "nbformat": 4,
-    "nbformat_minor": 0,
-}
+    {
+        "instruction": "Compare the emission factor for wheat production between France and the USA.",
+        "input": "",
+        "output": "The emission factor for wheat production in France is 0.38 kg CO2e/kg, while in the USA it is 0.41 kg CO2e/kg. The USA has a slightly higher emission factor (by 7.9%). This data is sourced from Agribalyse_3.1 for France and USEEIO_v2.1 for the USA.",
+        "metadata": {
+            "regions": ["FR", "USA"],
+            "entity_types": ["product"],
+            "difficulty": "moderate",
+            "sources": ["Agribalyse_3.1", "USEEIO_v2.1"]
+        }
+    }
+]
 
-# Write the notebook to a file
-with open("training/notebooks/mistral_finetuning.ipynb", "w") as f:
-    json.dump(notebook, f, indent=2)
+# Write sample data files directly
+with open('training/data/instructions_train.json', 'w') as f:
+    json.dump(sample_instructions, f, indent=2)
+with open('training/data/instructions_val.json', 'w') as f:
+    json.dump([sample_instructions[0]], f, indent=2)
+with open('training/data/instructions_test.json', 'w') as f:
+    json.dump([sample_instructions[1]], f, indent=2)
 
-print("Notebook created successfully!")
+print("Sample data files created successfully!")
+!ls -l training/data/""",
+            },
+            {"cell_type": "markdown", "metadata": {}, "source": "## Import and Train"},
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "source": """import sys
+sys.path.append('training/scripts')
+
+from data_preparation import load_and_prepare_data, format_instruction
+from model_config import setup_model_and_tokenizer, get_training_config
+from training import setup_trainer, evaluate_model, save_model
+
+print("Successfully imported all modules!")""",
+            },
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "source": """# Load and prepare data
+train_data, val_data = load_and_prepare_data(
+    train_path='training/data/instructions_train.json',
+    val_path='training/data/instructions_val.json',
+    test_path='training/data/instructions_test.json'
+)
+
+# Format data
+train_data = train_data.map(format_instruction)
+val_data = val_data.map(format_instruction)
+
+print(f"Training examples: {len(train_data['train'])}")
+print(f"Validation examples: {len(val_data['train'])}")""",
+            },
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "source": """# Initialize model and trainer
+model, tokenizer = setup_model_and_tokenizer()
+config = get_training_config()
+trainer = setup_trainer(model, tokenizer, train_data, val_data, config)
+
+print("Model and trainer initialized successfully!")""",
+            },
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "source": """# Start training
+trainer.train()
+save_model(model, tokenizer, 'training/models')
+print("Training completed and model saved!")""",
+            },
+            {
+                "cell_type": "code",
+                "metadata": {},
+                "execution_count": None,
+                "source": """# Evaluate model
+results = evaluate_model(model, tokenizer)
+for result in results:
+    print(f"\\nQuery: {result['query']}")
+    print(f"Response: {result['response']}")""",
+            },
+        ],
+        "metadata": {
+            "accelerator": "GPU",
+            "colab": {"gpuType": "T4", "provenance": []},
+            "kernelspec": {"display_name": "Python 3", "name": "python3"},
+            "language_info": {"name": "python"},
+        },
+        "nbformat": 4,
+        "nbformat_minor": 0,
+    }
+
+    # Ensure the training/notebooks directory exists
+    os.makedirs("training/notebooks", exist_ok=True)
+
+    # Write the notebook
+    with open("training/notebooks/mistral_finetuning.ipynb", "w") as f:
+        json.dump(notebook, f, indent=2)
+
+
+if __name__ == "__main__":
+    create_notebook()
+    print("Notebook created successfully!")
