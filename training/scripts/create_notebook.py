@@ -113,12 +113,12 @@ print("Model and tokenizer configured successfully!")"""
     )
 )
 
-# Data Preparation
+# Data Preparation - UPDATED to create sample data
 nb.cells.append(
     nbf.v4.new_markdown_cell(
         """## 4. Data Preparation
 
-Load and prepare the training data from the GitHub repository."""
+Load and prepare the training data. If the data files don't exist, create sample data for testing."""
     )
 )
 
@@ -128,34 +128,74 @@ nb.cells.append(
 !git clone https://github.com/Sbursu/Carbon-EF.git
 %cd Carbon-EF
 
-# Load datasets
+# Create sample data if it doesn't exist
+import os
+import json
 from datasets import load_dataset
 
-train_data = load_dataset('json', data_files='training/data/instructions_train.json')
-val_data = load_dataset('json', data_files='training/data/instructions_val.json')
-test_data = load_dataset('json', data_files='training/data/instructions_test.json')
+# Check for the data directory and create it if it doesn't exist
+!mkdir -p training/data
 
-# Format instruction template
-def format_instruction(example):
-    instruction = example['instruction']
-    input_text = example.get('input', '')
-    output = example['output']
+# Define sample data for emission factors
+sample_data = [
+    {
+        "instruction": "Recommend an emission factor for rice production in Asia.",
+        "output": "For rice production in Asia, I recommend using an emission factor of 1.46 kg CO2e per kg of rice, based on the Agribalyse database."
+    },
+    {
+        "instruction": "What is the carbon footprint of beef production?",
+        "output": "The carbon footprint of beef production is approximately 27 kg CO2e per kg of beef, making it one of the highest emission foods."
+    },
+    {
+        "instruction": "Provide an emission factor for electricity generation from coal.",
+        "output": "For electricity generation from coal, the emission factor is approximately 1000 g CO2e per kWh, which is significantly higher than renewable sources."
+    }
+]
+
+# Create train, validation, and test files if they don't exist
+data_files = {
+    'training/data/instructions_train.json': sample_data[:2],
+    'training/data/instructions_val.json': [sample_data[2]],
+    'training/data/instructions_test.json': [sample_data[2]]
+}
+
+for file_path, data in data_files.items():
+    if not os.path.exists(file_path):
+        print(f"Creating sample data file: {file_path}")
+        with open(file_path, 'w') as f:
+            json.dump(data, f)
+
+# Now load the datasets
+try:
+    train_data = load_dataset('json', data_files='training/data/instructions_train.json')
+    val_data = load_dataset('json', data_files='training/data/instructions_val.json')
+    test_data = load_dataset('json', data_files='training/data/instructions_test.json')
     
-    if input_text:
-        formatted = f"<s>[INST] {instruction}\\n\\n{input_text} [/INST] {output} </s>"
-    else:
-        formatted = f"<s>[INST] {instruction} [/INST] {output} </s>"
+    # Format instruction template
+    def format_instruction(example):
+        instruction = example['instruction']
+        input_text = example.get('input', '')
+        output = example['output']
+        
+        if input_text:
+            formatted = f"<s>[INST] {instruction}\\n\\n{input_text} [/INST] {output} </s>"
+        else:
+            formatted = f"<s>[INST] {instruction} [/INST] {output} </s>"
+        
+        return {'text': formatted}
+
+    # Apply formatting
+    train_data = train_data.map(format_instruction)
+    val_data = val_data.map(format_instruction)
+    test_data = test_data.map(format_instruction)
+
+    print(f"Training samples: {len(train_data['train'])}")
+    print(f"Validation samples: {len(val_data['train'])}")
+    print(f"Test samples: {len(test_data['train'])}")
     
-    return {'text': formatted}
-
-# Apply formatting
-train_data = train_data.map(format_instruction)
-val_data = val_data.map(format_instruction)
-test_data = test_data.map(format_instruction)
-
-print(f"Training samples: {len(train_data['train'])}")
-print(f"Validation samples: {len(val_data['train'])}")
-print(f"Test samples: {len(test_data['train'])}")"""
+except Exception as e:
+    print(f"Error loading datasets: {e}")
+    print("Please check that the data files exist and are properly formatted.")"""
     )
 )
 
