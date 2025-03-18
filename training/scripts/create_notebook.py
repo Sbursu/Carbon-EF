@@ -35,13 +35,19 @@ nb.cells.append(
 from google.colab import drive
 drive.mount('/content/drive')
 
-# Install required packages - updated versions for compatibility
-!pip install -q torch==2.1.0 
-!pip install -q huggingface_hub==0.19.4
-!pip install -q accelerate==0.25.0
-!pip install -q transformers==4.35.0 
-!pip install -q peft==0.7.1 
-!pip install -q datasets scipy wandb trl==0.7.4 bitsandbytes==0.40.2"""
+# Install required packages with strict versioning to ensure compatibility
+!pip install -q numpy==1.26.4  # Pin to NumPy < 2.0
+!pip install -q torch==2.0.1
+!pip install -q huggingface_hub==0.17.3
+!pip install -q accelerate==0.22.0
+!pip install -q transformers==4.32.0
+!pip install -q peft==0.5.0
+!pip install -q datasets==2.14.6
+!pip install -q scipy==1.11.4 wandb==0.15.12 trl==0.7.2
+!pip install -q bitsandbytes==0.41.1
+
+# Verify package versions
+!pip list | grep -E 'numpy|torch|huggingface_hub|accelerate|transformers|peft'"""
     )
 )
 
