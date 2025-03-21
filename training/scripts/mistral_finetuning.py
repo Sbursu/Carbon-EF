@@ -12,7 +12,6 @@ from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 import torch
-import wandb
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model
 from tqdm.auto import tqdm
@@ -45,7 +44,7 @@ def setup_environment():
 
     # Install required packages
     os.system(
-        "pip install -q torch>=2.0.0 transformers>=4.34.0 peft>=0.5.0 accelerate>=0.21.0 bitsandbytes>=0.40.0 trl>=0.7.1 tensorboard>=2.14.0 datasets>=2.14.0 evaluate>=0.4.0 tqdm>=4.66.1 pandas>=2.1.0 matplotlib>=3.7.2 seaborn>=0.12.2 sentencepiece>=0.1.99 scipy>=1.11.2 scikit-learn>=1.3.0 einops>=0.6.1 wandb>=0.15.10"
+        "pip install -q torch>=2.0.0 transformers>=4.34.0 peft>=0.5.0 accelerate>=0.21.0 bitsandbytes>=0.40.0 trl>=0.7.1 tensorboard>=2.14.0 datasets>=2.14.0 evaluate>=0.4.0 tqdm>=4.66.1 pandas>=2.1.0 matplotlib>=3.7.2 seaborn>=0.12.2 sentencepiece>=0.1.99 scipy>=1.11.2 scikit-learn>=1.3.0 einops>=0.6.1"
     )
 
 

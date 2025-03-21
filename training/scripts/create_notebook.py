@@ -43,7 +43,7 @@ drive.mount('/content/drive')
 !pip install -q transformers==4.32.0
 !pip install -q peft==0.5.0
 !pip install -q datasets==2.14.6
-!pip install -q scipy==1.11.4 wandb==0.15.12 trl==0.7.2
+!pip install -q scipy==1.11.4 trl==0.7.2
 !pip install -q bitsandbytes==0.41.1
 
 # Verify package versions
@@ -81,42 +81,22 @@ except Exception as e:
 # Add Weights & Biases setup
 nb.cells.append(
     nbf.v4.new_markdown_cell(
-        """## 3. Weights & Biases Setup
+        """## 3. Experiment Tracking Setup
 
-Initialize Weights & Biases for experiment tracking."""
+Initialize TensorBoard for experiment tracking."""
     )
 )
 
-nb.cells.append(
-    nbf.v4.new_code_cell(
-        """import wandb
+# Set up TensorBoard for experiment tracking
+from torch.utils.tensorboard import SummaryWriter
 
-# Initialize wandb - this will open a browser tab for authentication if not already logged in
-# If you're already logged in through the browser, this will use your existing session
-wandb.login()
-
-# Define project and experiment details
-WANDB_PROJECT = "mistral-carbon-ef"
+# Create a directory for logs
+LOG_DIR = "runs/mistral-7b-emission-factors"
 EXPERIMENT_NAME = "mistral-7b-emission-factors"
 
-# Initialize the wandb run
-wandb.init(
-    project=WANDB_PROJECT,
-    name=EXPERIMENT_NAME,
-    config={
-        "model_name": "mistralai/Mistral-7B-Instruct-v0.2",
-        "epochs": 3,
-        "learning_rate": 2e-4,
-        "batch_size": 1,
-        "gradient_accumulation_steps": 8,
-        "lora_rank": 8,
-        "lora_alpha": 16
-    }
-)
-
-print("Weights & Biases initialized successfully!")"""
-    )
-)
+# Initialize TensorBoard writer
+writer = SummaryWriter(LOG_DIR)
+print(f"TensorBoard logs will be saved to {LOG_DIR}")
 
 # Model Configuration - UPDATED to use 16-bit precision and fix meta tensor error
 nb.cells.append(
@@ -280,7 +260,7 @@ training_args = TrainingArguments(
     save_strategy="epoch",
     eval_strategy="epoch",  # Fixed deprecated warning
     load_best_model_at_end=True,
-    report_to="wandb",  # Log metrics to Weights & Biases
+    report_to="tensorboard",
     run_name=EXPERIMENT_NAME,  # Use the same experiment name for wandb
     warmup_ratio=0.1,
     gradient_checkpointing=True,  # Enable gradient checkpointing to save memory
@@ -335,14 +315,12 @@ Evaluate the fine-tuned model on the test set."""
     )
 )
 
+# Add back the evaluation code cell without wandb
 nb.cells.append(
     nbf.v4.new_code_cell(
         """# Evaluate on test set
 test_results = trainer.evaluate(test_data['train'])
-print(f"Test results: {test_results}")
-
-# Log test results to wandb
-wandb.log({"test_loss": test_results["loss"]})"""
+print(f"Test results: {test_results}")"""
     )
 )
 
@@ -367,12 +345,8 @@ with open("/content/drive/MyDrive/mistral-ef-final/training_config.json", "w") a
     json.dump({
         "model_name": MODEL_NAME,
         "lora_config": lora_config.to_dict(),
-        "training_args": training_args.to_dict(),
-        "test_results": test_results
+        "training_args": training_args.to_dict()
     }, f, indent=2)
-
-# Finish wandb run
-wandb.finish()
 
 print("Model and configuration saved successfully!")"""
     )

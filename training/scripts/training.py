@@ -1,12 +1,10 @@
 import torch
-import wandb
 from transformers import Trainer, TrainingArguments
 
 
 def setup_trainer(model, tokenizer, train_data, val_data, config):
     """Set up the trainer with appropriate configuration."""
-    # Initialize wandb
-    wandb.init(project="carbon-ef-mistral", name="fine-tuning-run-1")
+    # No wandb initialization
 
     # Training arguments
     training_args = TrainingArguments(
@@ -23,7 +21,7 @@ def setup_trainer(model, tokenizer, train_data, val_data, config):
         save_steps=50,
         warmup_steps=100,
         max_steps=config["train_steps"],
-        report_to="wandb",
+        report_to="tensorboard",
     )
 
     # Initialize trainer
