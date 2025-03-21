@@ -6,26 +6,6 @@ This project implements a data extraction, cleaning, and harmonization pipeline 
 
 The Adaptive Global LCA Advisor aims to develop an AI system that recommends region-specific emission factors (EFs) for accurate carbon accounting. This system addresses limitations in existing solutions like static datasets and single region focus. The project combines data from multiple sources to create a comprehensive global emission factor dataset.
 
-## Fine-tuning Mistral-7B for Emission Factor Recommendations
-
-To fine-tune the Mistral-7B model on our emission factor dataset, we provide a Google Colab notebook that handles the entire process. The notebook includes:
-
-- Environment setup with GPU support
-- Data preparation and loading
-- Model configuration with LoRA
-- Training loop with monitoring
-- Evaluation and model export
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Sbursu/Carbon-EF/blob/main/training/notebooks/mistral_finetuning.ipynb)
-
-To use the notebook:
-
-1. Click the "Open in Colab" badge above
-2. Sign into your Google account
-3. Set the runtime type to GPU (Runtime > Change runtime type)
-4. Run the cells in sequence
-5. Monitor the training progress in Weights & Biases
-
 ## Project Structure
 
 ```
@@ -309,3 +289,16 @@ For access to the actual complete datasets (rather than the simulated versions):
 ## Contributors
 
 [Add contributor information here]
+
+# Fine-tuning Mistral-7B for Emission Factor Recommendations
+
+## Google Colab Integration
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Sbursu/Carbon-EF/blob/main/training/notebooks/mistral_finetuning.ipynb)
+
+To start fine-tuning:
+
+1. Click the "Open in Colab" badge above
+2. Make sure you're signed into your Google account
+3. Select "Runtime" -> "Change runtime type" and set it to GPU
+4. Run the cells in sequence
