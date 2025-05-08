@@ -1,0 +1,26 @@
+api:
+  host: "0.0.0.0"
+  port: 8000
+  reload: true
+
+streamlit:
+  port: 8501
+
+neo4j:
+  uri: "bolt://localhost:7687"
+  username: "neo4j"
+  password: "carbon_ef_secure"
+
+qdrant:
+  host: "localhost"
+  port: 6333
+  collection: "emission_factors"
+  vector_size: 768
+
+phi2:
+  model_name: "Surendra-Aitest/phi2-env-factors-merged"
+  device: "auto"  # "cpu", "cuda", or "auto"
+
+cache:
+  ttl: 3600  # seconds
+  similarity_threshold: 0.85

@@ -1,30 +1,95 @@
-version: "3"
+version: "3.8"
 
 services:
+  # Neo4j database
   neo4j:
-    image: neo4j:5.11-community
-    container_name: neo4j-ef-kg
+    image: neo4j:5.12
+    container_name: carbon_ef_neo4j
     ports:
       - "7474:7474" # HTTP
       - "7687:7687" # Bolt
     environment:
-      - NEO4J_AUTH=neo4j/complex-password-here
-      - NEO4J_server_memory_heap_max__size=2G
-      - NEO4J_server_memory_pagecache_size=1G
-      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
-      - NEO4J_dbms_security_procedures_allowlist=apoc.*
+      - NEO4J_AUTH=neo4j/carbon_ef_secure
       - NEO4J_apoc_export_file_enabled=true
       - NEO4J_apoc_import_file_enabled=true
-      - NEO4J_apoc_import_file_use__neo4j__config=true
-      - NEO4J_server_directories_import=/import
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
     volumes:
-      - ./neo4j/data:/data
-      - ./neo4j/logs:/logs
-      - ./neo4j/import:/import
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
       - ./neo4j/plugins:/plugins
     healthcheck:
-      test: wget http://localhost:7474 || exit 1
+      test: ["CMD", "wget", "-O", "/dev/null", "-q", "http://localhost:7474"]
       interval: 10s
-      timeout: 10s
-      retries: 20
-      start_period: 30s
+      timeout: 5s
+      retries: 10
+
+  # Qdrant vector database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: carbon_ef_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/collections"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Carbon EF API service
+  api:
+    build:
+      context: .
+      dockerfile: ./docker/api.Dockerfile
+    container_name: carbon_ef_api
+    ports:
+      - "8000:8000"
+    environment:
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=carbon_ef_secure
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - model_cache:/root/.cache/huggingface # Cache models
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4G
+
+  # Streamlit web interface
+  streamlit:
+    build:
+      context: .
+      dockerfile: ./docker/streamlit.Dockerfile
+    container_name: carbon_ef_streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      - api
+    volumes:
+      - .:/app
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2G
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  qdrant_data:
+  model_cache:
