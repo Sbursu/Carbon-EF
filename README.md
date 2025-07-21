@@ -27,10 +27,10 @@ Key performance metrics:
       ▲                    ▲                   ▲
       │                    │                   │
       ▼                    ▼                   ▼
-┌────────────┐      ┌────────────┐      ┌────────────┐
-│    Phi-2   │      │   Qdrant   │      │   Neo4j    │
-│   Embeddings│◄────►│   Vector DB │◄────►│  Knowledge │
-└────────────┘      └────────────┘      └────────────┘
+┌────────────┐      ┌────────────┐      ┌────────────--┐
+│    Phi-2   │      │   Qdrant   │      │   Neo4j      │
+│  Embeddings│◄───► │  Vector DB │◄────►│  Knowledge   │
+└────────────┘      └────────────┘      └────────────--┘
 ```
 
 Our system architecture illustrates the interactions between:
@@ -91,9 +91,9 @@ _Note: Consider adding a proper system architecture diagram to the repository at
 
 ┌────────────────────────────────────────────────────┐
 │           Data Sources (23,520 Total Records)      │
-├────────────────┬─────────────┬────────────────────┤
+├────────────────┬─────────────┬────────────────────-┤
 │ Source         │ Records     │ Focus Area          │
-├────────────────┼─────────────┼────────────────────┤
+├────────────────┼─────────────┼────────────────────-┤
 │ USEEIO v2.1    │ 13,561      │ Industrial          │
 │ Climate TRACE  │ 4,681       │ Real-time emissions │
 │ Agribalyse 3.1 │ 2,793       │ Food products       │
@@ -102,7 +102,7 @@ _Note: Consider adding a proper system architecture diagram to the repository at
 │ OpenLCA        │ 961         │ Process-based       │
 │ GREET Model    │ 234         │ Transportation      │
 │ IPCC EFDB      │ 191         │ Specific sectors    │
-└────────────────┴─────────────┴────────────────────┘
+└────────────────┴─────────────┴────────────────────-┘
 ```
 
 The data pipeline constructs a Neo4j knowledge graph by aggregating and harmonizing EF data from diverse sources. Key processing steps include:
@@ -193,18 +193,18 @@ _Note: Consider adding model architecture diagrams to the repository at images/m
 │  └─────────────────┘                                               │
 │           │                                                        │
 │           ▼                                                        │
-│  ┌─────────────────┐     ┌─────────────────────────────────┐      │
-│  │                 │     │                                 │      │
-│  │  Vector Search  │────►│  Qdrant Database               │      │
-│  │                 │     │  (23,520 EF Embeddings)        │      │
-│  └─────────────────┘     │                                 │      │
-│           │              └─────────────────────────────────┘      │
+│  ┌─────────────────┐     ┌─────────────────────────────────┐       │
+│  │                 │     │                                 │       │
+│  │  Vector Search  │────►│  Qdrant Database                │       │
+│  │                 │     │  (23,520 EF Embeddings)         │       │
+│  └─────────────────┘     │                                 │       │
+│           │              └─────────────────────────────────┘       │
 │           ▼                                                        │
-│  ┌─────────────────┐     ┌─────────────────────────────────┐      │
-│  │                 │     │                                 │      │
-│  │  KG Validation  │────►│  Neo4j Knowledge Graph         │      │
-│  │                 │     │                                 │      │
-│  └─────────────────┘     └─────────────────────────────────┘      │
+│  ┌─────────────────┐     ┌─────────────────────────────────┐       │
+│  │                 │     │                                 │       │
+│  │  KG Validation  │────►│  Neo4j Knowledge Graph          │       │
+│  │                 │     │                                 │       │
+│  └─────────────────┘     └─────────────────────────────────┘       │
 │           │                                                        │
 │           ▼                                                        │
 │  ┌─────────────────┐                                               │
@@ -215,9 +215,9 @@ _Note: Consider adding model architecture diagrams to the repository at images/m
 │  └─────────────────┘                                               │
 │           │                                                        │
 │           ▼                                                        │
-│  "The emission factor for wheat in France is 0.31 kg CO2e/kg      │
-│   with a confidence score of 0.95. This data comes from           │
-│   Agribalyse 3.1 and was last updated in 2023."                   │
+│  "The emission factor for wheat in France is 0.31 kg CO2e/kg       │
+│   with a confidence score of 0.95. This data comes from            │
+│   Agribalyse 3.1 and was last updated in 2023."                    │
 │                                                                    │
 └────────────────────────────────────────────────────────────────────┘
 ```
@@ -304,10 +304,10 @@ The system demonstrates robust performance across diverse metrics:
 ### Case Studies
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ Region-Specific Emission Factor Examples            │
+┌────────────────────────────────────────────────────┐
+│ Region-Specific Emission Factor Examples           │
 ├────────────────┬──────────────┬────────────────────┤
-│ Product/Process│ Region       │ EF (kg CO2e/unit)   │
+│ Product/Process│ Region       │ EF (kg CO2e/unit)  │
 ├────────────────┼──────────────┼────────────────────┤
 │ Wheat          │ France       │ 0.31 kg/kg         │
 │ Wheat          │ India        │ 0.45 kg/kg         │
